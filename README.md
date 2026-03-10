@@ -23,4 +23,5 @@
 
 ## リンク
 
+- [GitHub Pages で試す](https://mochibullet.github.io/moto-windchill/)
 - [GitHub リポジトリ](https://github.com/MochiBullet/moto-windchill)
