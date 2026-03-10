@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moto Wind Chill - バイク体感温度計算機</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header .icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    .input-group label .unit {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(96, 165, 250, 0.4);
+      transition: transform 0.15s;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .slider-row .value {
+      min-width: 56px;
+      text-align: right;
+      font-size: 1.1rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+    }
+
+    .result-card {
+      margin-top: 32px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+
+    .result-card .label {
+      font-size: 0.8rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .result-card .temp {
+      font-size: 3.5rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s;
+    }
+
+    .result-card .comment {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      color: #999;
+    }
+
+    .result-card .detail {
+      font-size: 0.75rem;
+      margin-top: 12px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Temperature color classes */
+    .temp-extreme-cold { color: #93c5fd; border-color: rgba(147, 197, 253, 0.3) !important; }
+    .temp-very-cold    { color: #7dd3fc; border-color: rgba(125, 211, 252, 0.3) !important; }
+    .temp-cold         { color: #67e8f9; border-color: rgba(103, 232, 249, 0.3) !important; }
+    .temp-cool         { color: #5eead4; border-color: rgba(94, 234, 212, 0.3) !important; }
+    .temp-mild         { color: #a3e635; border-color: rgba(163, 230, 53, 0.3) !important; }
+    .temp-warm         { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3) !important; }
+    .temp-hot          { color: #fb923c; border-color: rgba(251, 146, 60, 0.3) !important; }
+    .temp-very-hot     { color: #f87171; border-color: rgba(248, 113, 113, 0.3) !important; }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #555;
+    }
+
+    @media (max-width: 500px) {
+      .container { padding: 28px 20px; }
+      .result-card .temp { font-size: 2.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">🏍️</div>
+      <h1>バイク体感温度計算機</h1>
+      <p>Motorcycle Wind Chill Calculator</p>
+    </div>
+
+    <div class="input-group">
+      <label>気温 <span class="unit">℃</span></label>
+      <div class="slider-row">
+        <input type="range" id="temp" min="-20" max="45" step="1" value="20">
+        <span class="value" id="tempVal">20</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>走行速度 <span class="unit">km/h</span></label>
+      <div class="slider-row">
+        <input type="range" id="speed" min="0" max="180" step="5" value="60">
+        <span class="value" id="speedVal">60</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>湿度 <span class="unit">%</span></label>
+      <div class="slider-row">
+        <input type="range" id="humidity" min="0" max="100" step="5" value="50">
+        <span class="value" id="humidityVal">50</span>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>風速（向かい風） <span class="unit">m/s</span></label>
+      <div class="slider-row">
+        <input type="range" id="wind" min="0" max="20" step="1" value="0">
+        <span class="value" id="windVal">0</span>
+      </div>
+    </div>
+
+    <div class="result-card" id="resultCard">
+      <div class="label">体感温度</div>
+      <div class="temp" id="resultTemp">--</div>
+      <div class="comment" id="resultComment"></div>
+      <div class="detail" id="resultDetail"></div>
+    </div>
+
+    <div class="footer">
+      ※ JAF / Environment Canada 風速冷却モデルに基づく近似計算です
+    </div>
+  </div>
+
+  <script>
+    const sliders = {
+      temp:     { el: document.getElementById('temp'),     display: document.getElementById('tempVal'),     suffix: '' },
+      speed:    { el: document.getElementById('speed'),    display: document.getElementById('speedVal'),    suffix: '' },
+      humidity: { el: document.getElementById('humidity'), display: document.getElementById('humidityVal'), suffix: '' },
+      wind:     { el: document.getElementById('wind'),     display: document.getElementById('windVal'),     suffix: '' },
+    };
+
+    const resultCard    = document.getElementById('resultCard');
+    const resultTemp    = document.getElementById('resultTemp');
+    const resultComment = document.getElementById('resultComment');
+    const resultDetail  = document.getElementById('resultDetail');
+
+    function calculate() {
+      const T = Number(sliders.temp.el.value);           // ℃
+      const S = Number(sliders.speed.el.value);           // km/h
+      const H = Number(sliders.humidity.el.value);        // %
+      const W = Number(sliders.wind.el.value);            // m/s
+
+      // Update displays
+      sliders.temp.display.textContent     = T;
+      sliders.speed.display.textContent    = S;
+      sliders.humidity.display.textContent = H;
+      sliders.wind.display.textContent     = W;
+
+      // Effective wind speed in km/h (riding speed + headwind)
+      const effectiveWindKmh = S + W * 3.6;
+
+      let feelsLike;
+
+      if (effectiveWindKmh < 4.8 || T > 10) {
+        // Wind chill formula not applicable — use simpler Steadman approximation
+        // For higher temps, consider humidity (heat index effect)
+        if (T >= 27 && H > 40) {
+          // Simplified heat index (Steadman)
+          const hi = -8.785 + 1.611 * T + 2.339 * H / 100 * T
+                     - 0.1461 * T * T - 0.0168 * H * H
+                     + 0.002 * H * H / 100 * T * T;
+          feelsLike = Math.min(hi, T + 5); // cap unrealistic values
+        } else {
+          feelsLike = T;
+        }
+        // Apply mild wind cooling even below threshold
+        if (effectiveWindKmh >= 1) {
+          feelsLike -= effectiveWindKmh * 0.05;
+        }
+      } else {
+        // Environment Canada / NWS Wind Chill Index
+        const V = effectiveWindKmh;
+        feelsLike = 13.12 + 0.6215 * T - 11.37 * Math.pow(V, 0.16) + 0.3965 * T * Math.pow(V, 0.16);
+      }
+
+      // Humidity modifier for cold conditions (damp cold feels colder)
+      if (T < 10 && H > 70) {
+        feelsLike -= (H - 70) * 0.05;
+      }
+
+      const rounded = Math.round(feelsLike * 10) / 10;
+      resultTemp.textContent = rounded.toFixed(1) + '℃';
+
+      // Color and comment
+      let cls, comment;
+      if (rounded <= -20)     { cls = 'temp-extreme-cold'; comment = '極寒 — 走行は危険です'; }
+      else if (rounded <= -10){ cls = 'temp-very-cold';    comment = '厳寒 — 完全防寒が必須'; }
+      else if (rounded <= 0)  { cls = 'temp-cold';         comment = '凍える寒さ — 防寒対策を万全に'; }
+      else if (rounded <= 10) { cls = 'temp-cool';         comment = '寒い — 重ね着推奨'; }
+      else if (rounded <= 20) { cls = 'temp-mild';         comment = '快適 — ツーリング日和'; }
+      else if (rounded <= 28) { cls = 'temp-warm';         comment = '暖かい — メッシュジャケット推奨'; }
+      else if (rounded <= 35) { cls = 'temp-hot';          comment = '暑い — こまめに水分補給を'; }
+      else                    { cls = 'temp-very-hot';     comment = '猛暑 — 熱中症に注意'; }
+
+      resultCard.className = 'result-card ' + cls;
+      resultComment.textContent = comment;
+      resultDetail.textContent = `合成風速: ${effectiveWindKmh.toFixed(1)} km/h（走行 ${S} + 風 ${(W * 3.6).toFixed(1)}）`;
+    }
+
+    // Bind events
+    Object.values(sliders).forEach(s => {
+      s.el.addEventListener('input', calculate);
+    });
+
+    // Initial calculation
+    calculate();
+  </script>
+</body>
+</html>
