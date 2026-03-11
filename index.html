@@ -21,17 +21,18 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
+      transition: background 0.6s ease;
     }
 
     .container {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.35);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 24px;
       padding: 28px 36px;
       max-width: 480px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     }
 
     .header {
@@ -312,6 +313,50 @@
       resultCard.className = 'result-card ' + cls;
       resultComment.textContent = comment;
       resultDetail.textContent = `合成風速: ${effectiveWindKmh.toFixed(1)} km/h（走行 ${S} + 風 ${(W * 3.6).toFixed(1)}）`;
+
+      // Background gradient based on feels-like temperature
+      const bg = getBackgroundGradient(rounded);
+      document.body.style.background = bg;
+    }
+
+    function getBackgroundGradient(temp) {
+      // Color stops: deep blue (extreme cold) -> cyan -> teal -> green -> yellow -> orange -> red (extreme hot)
+      // All kept dark enough so white text stays readable
+      const stops = [
+        { t: -30, c1: [10, 15, 60],  c2: [20, 30, 90]  },  // deep navy blue
+        { t: -10, c1: [12, 40, 80],  c2: [20, 60, 100] },  // dark blue
+        { t:   0, c1: [10, 50, 70],  c2: [15, 70, 85]  },  // dark cyan
+        { t:  10, c1: [10, 55, 55],  c2: [15, 75, 70]  },  // dark teal
+        { t:  20, c1: [20, 50, 35],  c2: [30, 65, 45]  },  // dark green
+        { t:  28, c1: [60, 45, 10],  c2: [80, 60, 15]  },  // dark amber
+        { t:  35, c1: [75, 30, 10],  c2: [95, 40, 15]  },  // dark orange
+        { t:  45, c1: [80, 15, 15],  c2: [100, 25, 20] },  // dark red
+      ];
+
+      // Clamp
+      const clamped = Math.max(stops[0].t, Math.min(stops[stops.length - 1].t, temp));
+
+      // Find surrounding stops
+      let lower = stops[0], upper = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (clamped >= stops[i].t && clamped <= stops[i + 1].t) {
+          lower = stops[i];
+          upper = stops[i + 1];
+          break;
+        }
+      }
+
+      const ratio = (upper.t === lower.t) ? 0 : (clamped - lower.t) / (upper.t - lower.t);
+      const lerp = (a, b) => Math.round(a + (b - a) * ratio);
+
+      const r1 = lerp(lower.c1[0], upper.c1[0]);
+      const g1 = lerp(lower.c1[1], upper.c1[1]);
+      const b1 = lerp(lower.c1[2], upper.c1[2]);
+      const r2 = lerp(lower.c2[0], upper.c2[0]);
+      const g2 = lerp(lower.c2[1], upper.c2[1]);
+      const b2 = lerp(lower.c2[2], upper.c2[2]);
+
+      return `linear-gradient(135deg, rgb(${r1},${g1},${b1}), rgb(${r2},${g2},${b2}))`;
     }
 
     // Bind events
