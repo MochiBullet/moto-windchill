@@ -171,7 +171,7 @@
     .temp-very-hot     { color: #f87171; border-color: rgba(248, 113, 113, 0.3) !important; }
 
     .install-btn {
-      display: none;
+      display: block;
       width: 100%;
       margin-top: 16px;
       padding: 12px;
@@ -419,9 +419,9 @@
       installBtn.style.display = 'none';
     });
 
-    // Show install button on iOS (no beforeinstallprompt support)
-    if (/iPhone|iPad/.test(navigator.userAgent) && !window.navigator.standalone) {
-      installBtn.style.display = 'block';
+    // Hide install button if already running as standalone app
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      installBtn.style.display = 'none';
     }
 
     // Register Service Worker
