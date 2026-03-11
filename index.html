@@ -264,36 +264,24 @@
       sliders.humidity.display.textContent = H;
       sliders.wind.display.textContent     = W;
 
-      // Effective wind speed in km/h (riding speed + headwind)
+      // Effective wind speed
       const effectiveWindKmh = S + W * 3.6;
+      const effectiveWindMs = effectiveWindKmh / 3.6;
 
       let feelsLike;
 
-      if (effectiveWindKmh < 4.8 || T > 10) {
-        // Wind chill formula not applicable — use simpler Steadman approximation
-        // For higher temps, consider humidity (heat index effect)
-        if (T >= 27 && H > 40) {
-          // Simplified heat index (Steadman)
-          const hi = -8.785 + 1.611 * T + 2.339 * H / 100 * T
-                     - 0.1461 * T * T - 0.0168 * H * H
-                     + 0.002 * H * H / 100 * T * T;
-          feelsLike = Math.min(hi, T + 5); // cap unrealistic values
-        } else {
-          feelsLike = T;
-        }
-        // Apply mild wind cooling even below threshold
-        if (effectiveWindKmh >= 1) {
-          feelsLike -= effectiveWindKmh * 0.05;
-        }
+      if (T <= 10 && effectiveWindKmh >= 4.8) {
+        // NWS / Environment Canada Wind Chill Index (valid: T<=10℃, wind>=4.8km/h)
+        feelsLike = 13.12 + 0.6215 * T
+                    - 11.37 * Math.pow(effectiveWindKmh, 0.16)
+                    + 0.3965 * T * Math.pow(effectiveWindKmh, 0.16);
       } else {
-        // Environment Canada / NWS Wind Chill Index
-        const V = effectiveWindKmh;
-        feelsLike = 13.12 + 0.6215 * T - 11.37 * Math.pow(V, 0.16) + 0.3965 * T * Math.pow(V, 0.16);
-      }
-
-      // Humidity modifier for cold conditions (damp cold feels colder)
-      if (T < 10 && H > 70) {
-        feelsLike -= (H - 70) * 0.05;
+        // Australian Apparent Temperature (Steadman 1994)
+        // Works across all temperature ranges, accounts for wind + humidity
+        // e = water vapor pressure (hPa)
+        const e = (H / 100) * 6.105 * Math.exp((17.27 * T) / (237.7 + T));
+        // AT = T + 0.33*e - 0.7*ws - 4.0
+        feelsLike = T + 0.33 * e - 0.7 * effectiveWindMs - 4.0;
       }
 
       const rounded = Math.round(feelsLike * 10) / 10;
