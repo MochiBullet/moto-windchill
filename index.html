@@ -170,8 +170,32 @@
     .temp-hot          { color: #fb923c; border-color: rgba(251, 146, 60, 0.3) !important; }
     .temp-very-hot     { color: #f87171; border-color: rgba(248, 113, 113, 0.3) !important; }
 
-    .footer {
+    .install-btn {
+      display: none;
+      width: 100%;
       margin-top: 16px;
+      padding: 12px;
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      border-radius: 12px;
+      background: rgba(167, 139, 250, 0.1);
+      color: #c4b5fd;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .install-btn:hover {
+      background: rgba(167, 139, 250, 0.2);
+      border-color: rgba(167, 139, 250, 0.6);
+    }
+
+    .install-btn:active {
+      transform: scale(0.98);
+    }
+
+    .footer {
+      margin-top: 12px;
       text-align: center;
       font-size: 0.7rem;
       color: #555;
@@ -238,6 +262,8 @@
       <div class="comment" id="resultComment"></div>
       <div class="detail" id="resultDetail"></div>
     </div>
+
+    <button class="install-btn" id="installBtn">ホーム画面に追加</button>
 
     <div class="footer">
       ※ JAF / Environment Canada 風速冷却モデルに基づく近似計算です
@@ -359,6 +385,44 @@
 
     // Initial calculation
     calculate();
+
+    // PWA install
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        // Fallback: show manual instructions for iOS / unsupported browsers
+        const ua = navigator.userAgent;
+        if (/iPhone|iPad/.test(ua)) {
+          alert('画面下の共有ボタン（↑）から\n「ホーム画面に追加」を選んでください');
+        } else {
+          alert('ブラウザのメニューから\n「ホーム画面に追加」を選んでください');
+        }
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+    });
+
+    // Show install button on iOS (no beforeinstallprompt support)
+    if (/iPhone|iPad/.test(navigator.userAgent) && !window.navigator.standalone) {
+      installBtn.style.display = 'block';
+    }
 
     // Register Service Worker
     if ('serviceWorker' in navigator) {
