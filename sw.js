@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moto-windchill-v1';
+const CACHE_NAME = 'moto-windchill-v2';
 const ASSETS = [
   './',
   './index.html',
